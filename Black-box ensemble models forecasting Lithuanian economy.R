@@ -260,3 +260,11 @@ refit_tbl %>%
 # gluon-ts
 # 
 install_gluonts()
+
+data <- m4_hourly %>%
+  select(id, date, value) %>%
+  group_by(id) %>%
+  mutate(value = standardize_vec(value)) %>%
+  ungroup()
+
+data
