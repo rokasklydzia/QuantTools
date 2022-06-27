@@ -1,7 +1,7 @@
 # Let's install and load the required packages
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(modeltime, modeltime.ensemble, modeltime.gluonts, ggthemes, tidymodels, tidyverse, 
-               timetk, eurostat, lubridate)
+               timetk, eurostat, lubridate, glmnet)
 
 interactive <- FALSE
 interactive <- TRUE
@@ -13,6 +13,10 @@ NAMQ_10_GDP <- NAMQ_10_GDP %>% filter(
   na_item %in% c("B1GQ","B1G","P5G","p51G","P6","P61","P62","P7","P71","P72","D1","D11","D12","B2A3G"),
   geo %in% c("EE", "LV","LT")
 )
+
+write.csv(NAMQ_10_GDP, file = "NAMQ_10_GDP.csv")
+NAMQ_10_GDP <- read.csv("NAMQ_10_GDP.csv")
+NAMQ_10_GDP <- NAMQ_10_GDP[c(2:7)]
 
 library(DataExplorer)
 DataExplorer::introduce(NAMQ_10_GDP)
@@ -42,6 +46,9 @@ names(esNAMQ_10_GDP) <- c("unit", "s_adj", "id", "date", "EE", "LT", "LV")
 lt_data <- dplyr::select(esNAMQ_10_GDP, c("id", "date", "LT")) %>% 
   filter(id == "B1GQ") # Lithuanian GDP data (B1GQ)
 
+lt_data$date <- as.Date(lt_data$date)
+class(lt_data$LT)
+class(lt_data$id)
 
 # DataExplorer::create_report(lt_data) # Some aoutomated EDA for the underlying data. It creates a HTML report.
 
@@ -49,7 +56,7 @@ lt_data %>%
   plot_time_series(date, LT, .interactive = interactive) + theme_clean() +
   ggtitle("Lithuanian GDP", "Eurostat data")
 #theme_hc(bgcolor = "darkunica") +
-  #scale_colour_hc("darkunica")#theme_solarized(light = FALSE) #theme_economist()
+#scale_colour_hc("darkunica")#theme_solarized(light = FALSE) #theme_economist()
 
 
 # Split Data 80/20
@@ -202,6 +209,7 @@ model_spec_glmnet <- linear_reg(
 ) %>%
   set_engine("glmnet")
 
+# install.packages("glmnet")
 wflw_fit_glmnet <- workflow() %>%
   add_model(model_spec_glmnet) %>%
   add_recipe(recipe_spec %>% step_rm(date)) %>%
